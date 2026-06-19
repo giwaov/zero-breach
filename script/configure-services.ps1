@@ -1,5 +1,6 @@
 $ErrorActionPreference = "Stop"
 
+$projectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $contractAddress = "0x4B515626bd9e17c1a53f11C0a162DAd2E73a0350"
 $expectedOperator = "0x662Ef31e2407Da16CE5b969C69807C313a1E5B13"
 $storageKey = $env:ZG_STORAGE_PRIVATE_KEY
@@ -40,6 +41,7 @@ function Set-VercelSecretWithoutNewline {
     $startInfo = New-Object System.Diagnostics.ProcessStartInfo
     $startInfo.FileName = "cmd.exe"
     $startInfo.Arguments = "/d /s /c vercel env add $Name production --sensitive --force --yes"
+    $startInfo.WorkingDirectory = $projectRoot
     $startInfo.UseShellExecute = $false
     $startInfo.RedirectStandardInput = $true
     $startInfo.RedirectStandardOutput = $true
@@ -65,7 +67,7 @@ Write-Host "Configuring ZERO//BREACH production services..."
 Set-VercelSecretWithoutNewline "ZG_STORAGE_PRIVATE_KEY" $storageKey
 Set-VercelSecretWithoutNewline "BREACH_ARENA_OPERATOR_PRIVATE_KEY" $operatorKey
 
-vercel env add BREACH_ARENA_CONTRACT_ADDRESS production `
+vercel --cwd $projectRoot env add BREACH_ARENA_CONTRACT_ADDRESS production `
     --value $contractAddress `
     --force `
     --yes
@@ -74,7 +76,7 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 Write-Host "Redeploying production..."
-vercel --prod --yes
+vercel --cwd $projectRoot --prod --yes
 if ($LASTEXITCODE -ne 0) {
     throw "ZERO//BREACH production redeployment failed."
 }
