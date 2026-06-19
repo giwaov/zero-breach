@@ -72,7 +72,7 @@ const refereeSchema = z.object({
   score: z.number().min(0).max(100),
   breached: z.boolean(),
   classification: z.string().min(3).max(80),
-  summary: z.string().min(8).max(400),
+  summary: z.string().min(8).max(1_200),
   techniques: z.array(z.string().min(2).max(60)).max(6)
 });
 
@@ -302,8 +302,20 @@ app.get("/api/health", (_request, response) => {
 
 app.post("/api/attacks", async (request, response) => {
   const startedAt = Date.now();
+  const parsedInput = attackSchema.safeParse(request.body);
+  if (!parsedInput.success) {
+    response.status(400).json({
+      error: "Invalid attack submission.",
+      issues: parsedInput.error.issues.map((issue) => ({
+        field: issue.path.join("."),
+        message: issue.message
+      }))
+    });
+    return;
+  }
+
   try {
-    const input = attackSchema.parse(request.body);
+    const input = parsedInput.data;
     if (Math.abs(Date.now() - Date.parse(input.issuedAt)) > 10 * 60 * 1000) {
       response.status(400).json({ error: "Attack authorization expired. Sign again." });
       return;
@@ -381,16 +393,6 @@ app.post("/api/attacks", async (request, response) => {
       latencyMs: Date.now() - startedAt
     });
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      response.status(400).json({
-        error: "Invalid attack submission.",
-        issues: error.issues.map((issue) => ({
-          field: issue.path.join("."),
-          message: issue.message
-        }))
-      });
-      return;
-    }
     internalError("attack-run", error);
     const unavailable =
       error instanceof Error &&

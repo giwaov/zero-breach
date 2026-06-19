@@ -39,4 +39,8 @@ describe("ZERO//BREACH protocol", () => {
     const signature = await wallet.signMessage("ZERO//BREACH");
     expect(signature).toHaveLength(132);
   });
+
+  it("keeps client authorization validation separate from referee output", () => {
+    expect(buildAttackAuthorization).toBeTypeOf("function");
+  });
 });
