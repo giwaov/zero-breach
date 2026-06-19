@@ -28,3 +28,14 @@ Without `ZG_COMPUTE_API_KEY`, the UI remains available but attacks fail closed w
 
 Set `VAULT_SECRET_SEED` to at least 32 random characters. Vault flags are derived
 server-side with HMAC and never stored as literals in source control.
+
+## Production Compute setup
+
+From the project directory:
+
+```powershell
+.\script\configure-compute.ps1
+```
+
+The Vercel CLI prompts for the Compute key directly. Do not paste API keys or
+private keys into chat, source files, or PowerShell pipelines.
