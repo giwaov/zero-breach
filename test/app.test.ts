@@ -33,4 +33,10 @@ describe("ZERO//BREACH protocol", () => {
       "operator is invalid"
     );
   });
+
+  it("uses the standard 132-character Ethereum signature format", async () => {
+    const wallet = ethers.Wallet.createRandom();
+    const signature = await wallet.signMessage("ZERO//BREACH");
+    expect(signature).toHaveLength(132);
+  });
 });

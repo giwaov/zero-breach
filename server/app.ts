@@ -382,7 +382,13 @@ app.post("/api/attacks", async (request, response) => {
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      response.status(400).json({ error: "Invalid attack submission." });
+      response.status(400).json({
+        error: "Invalid attack submission.",
+        issues: error.issues.map((issue) => ({
+          field: issue.path.join("."),
+          message: issue.message
+        }))
+      });
       return;
     }
     internalError("attack-run", error);
