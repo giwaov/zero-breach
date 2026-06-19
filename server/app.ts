@@ -10,6 +10,11 @@ const MAINNET_CHAIN_ID = 16661n;
 const MAINNET_RPC = "https://evmrpc.0g.ai";
 const COMPUTE_ROUTER = "https://router-api.0g.ai/v1";
 const STORAGE_INDEXER = "https://indexer-storage-turbo.0g.ai";
+const DEFAULT_ARENA_CONTRACT = "0x4B515626bd9e17c1a53f11C0a162DAd2E73a0350";
+const ARENA_DEPLOYMENT_BLOCK = 36543146;
+const arenaInterface = new ethers.Interface([
+  "event BattleFinalized(bytes32 indexed attackId,address indexed operative,bytes32 indexed vaultId,uint16 score,bool breached,bytes32 replayRoot,bytes32 modelHash)"
+]);
 
 app.use(express.json({ limit: "256kb" }));
 
@@ -245,7 +250,9 @@ async function settleAttack(input: {
   replayRoot: string;
   model: string;
 }) {
-  const contractAddress = process.env.BREACH_ARENA_CONTRACT_ADDRESS?.trim();
+  const contractAddress =
+    process.env.BREACH_ARENA_CONTRACT_ADDRESS?.trim() ||
+    DEFAULT_ARENA_CONTRACT;
   const privateKey = process.env.BREACH_ARENA_OPERATOR_PRIVATE_KEY?.trim();
   if (!contractAddress || !privateKey) return undefined;
   if (!ethers.isAddress(contractAddress)) throw new Error("invalid-contract");
@@ -298,6 +305,81 @@ app.get("/api/health", (_request, response) => {
         ? "live"
         : "not-configured"
   });
+});
+
+app.get("/api/leaderboard", async (_request, response) => {
+  try {
+    const provider = new ethers.JsonRpcProvider(
+      process.env.ZG_RPC_URL?.trim() || MAINNET_RPC
+    );
+    const contractAddress =
+      process.env.BREACH_ARENA_CONTRACT_ADDRESS?.trim() ||
+      DEFAULT_ARENA_CONTRACT;
+    const logs = await provider.getLogs({
+      address: contractAddress,
+      fromBlock: ARENA_DEPLOYMENT_BLOCK,
+      toBlock: "latest",
+      topics: [arenaInterface.getEvent("BattleFinalized")!.topicHash]
+    });
+    const byOperative = new Map<
+      string,
+      {
+        operative: string;
+        totalScore: number;
+        breaches: number;
+        battles: number;
+        latestTxHash: string;
+        latestBlock: number;
+      }
+    >();
+
+    for (const log of logs) {
+      const parsed = arenaInterface.parseLog(log);
+      if (!parsed) continue;
+      const operative = ethers.getAddress(parsed.args.operative as string);
+      const current = byOperative.get(operative) ?? {
+        operative,
+        totalScore: 0,
+        breaches: 0,
+        battles: 0,
+        latestTxHash: log.transactionHash,
+        latestBlock: 0
+      };
+      current.totalScore += Number(parsed.args.score);
+      current.breaches += parsed.args.breached ? 1 : 0;
+      current.battles += 1;
+      if (log.blockNumber >= current.latestBlock) {
+        current.latestBlock = log.blockNumber;
+        current.latestTxHash = log.transactionHash;
+      }
+      byOperative.set(operative, current);
+    }
+
+    const rows = [...byOperative.values()]
+      .sort(
+        (a, b) =>
+          b.breaches - a.breaches ||
+          b.totalScore - a.totalScore ||
+          a.operative.localeCompare(b.operative)
+      )
+      .map((entry, index) => ({
+        rank: index + 1,
+        operative: entry.operative,
+        totalScore: entry.totalScore,
+        breaches: entry.breaches,
+        battles: entry.battles,
+        latestTxHash: entry.latestTxHash
+      }));
+
+    response.json({
+      contractAddress,
+      deploymentBlock: ARENA_DEPLOYMENT_BLOCK,
+      rows
+    });
+  } catch (error) {
+    internalError("leaderboard-read", error);
+    response.status(502).json({ error: "Unable to read the mainnet leaderboard." });
+  }
 });
 
 app.post("/api/attacks", async (request, response) => {

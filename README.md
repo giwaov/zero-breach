@@ -39,3 +39,15 @@ From the project directory:
 
 The Vercel CLI prompts for the Compute key directly. Do not paste API keys or
 private keys into chat, source files, or PowerShell pipelines.
+
+## Storage and Mainnet settlement
+
+After deploying `BreachArena`, load the dedicated service-wallet key into
+`ZG_STORAGE_PRIVATE_KEY` and `BREACH_ARENA_OPERATOR_PRIVATE_KEY`, then run:
+
+```powershell
+.\script\configure-services.ps1
+```
+
+The helper validates that the key resolves to the deployed contract owner and
+streams secrets to Vercel without displaying them or adding line endings.

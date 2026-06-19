@@ -35,3 +35,12 @@ export type AttackPhase =
   | "referee"
   | "anchoring"
   | "complete";
+
+export type LeaderboardEntry = {
+  rank: number;
+  operative: string;
+  totalScore: number;
+  breaches: number;
+  battles: number;
+  latestTxHash: string;
+};

@@ -35,7 +35,12 @@ import {
   Zap
 } from "lucide-react";
 import { useAccount, useSignMessage, useSwitchChain } from "wagmi";
-import type { AttackPhase, AttackResult, Vault } from "./types";
+import type {
+  AttackPhase,
+  AttackResult,
+  LeaderboardEntry,
+  Vault
+} from "./types";
 import { vaults } from "./vaults";
 
 type Health = {
@@ -176,6 +181,7 @@ function App() {
   const [error, setError] = useState("");
   const [mobileOpen, setMobileOpen] = useState(false);
   const [health, setHealth] = useState<Health | null>(null);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const { address, chainId } = useAccount();
   const { signMessageAsync } = useSignMessage();
   const { switchChainAsync } = useSwitchChain();
@@ -185,6 +191,23 @@ function App() {
       .then((response) => response.json())
       .then((value: Health) => setHealth(value))
       .catch(() => setHealth(null));
+  }, []);
+
+  async function refreshLeaderboard() {
+    try {
+      const response = await fetch("/api/leaderboard");
+      if (!response.ok) return;
+      const payload = (await response.json()) as {
+        rows: LeaderboardEntry[];
+      };
+      setLeaderboard(payload.rows);
+    } catch {
+      setLeaderboard([]);
+    }
+  }
+
+  useEffect(() => {
+    void refreshLeaderboard();
   }, []);
 
   const progress = useMemo(
@@ -266,6 +289,7 @@ function App() {
       if (!response.ok) throw new Error(payload.error ?? "Attack execution failed.");
       setResult(payload);
       setPhase("complete");
+      if (payload.chainTxHash) void refreshLeaderboard();
     } catch (attackError) {
       setPhase("idle");
       setError(
@@ -558,12 +582,34 @@ function App() {
                 when the first wallet-finalized battle lands on 0G Mainnet.
               </p>
             </div>
-            <div className="empty-rank">
-              <Trophy size={38} />
-              <strong>NO FINALIZED BREACHES YET</strong>
-              <span>THE FIRST OPERATIVE BECOMES RANK #001</span>
-              <a href="#arena">CLAIM FIRST BLOOD <ArrowRight size={14} /></a>
-            </div>
+            {leaderboard.length === 0 ? (
+              <div className="empty-rank">
+                <Trophy size={38} />
+                <strong>NO FINALIZED BREACHES YET</strong>
+                <span>THE FIRST OPERATIVE BECOMES RANK #001</span>
+                <a href="#arena">CLAIM FIRST BLOOD <ArrowRight size={14} /></a>
+              </div>
+            ) : (
+              <div className="leaderboard-table">
+                <div className="leaderboard-head">
+                  <span>RANK</span><span>OPERATIVE</span><span>BREACHES</span><span>SCORE</span>
+                </div>
+                {leaderboard.slice(0, 8).map((entry) => (
+                  <a
+                    key={entry.operative}
+                    href={`https://chainscan.0g.ai/tx/${entry.latestTxHash}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="leaderboard-row"
+                  >
+                    <strong>#{entry.rank.toString().padStart(3, "0")}</strong>
+                    <span>{shortAddress(entry.operative)}</span>
+                    <span>{entry.breaches}</span>
+                    <span>{entry.totalScore}</span>
+                  </a>
+                ))}
+              </div>
+            )}
           </div>
         </section>
       </main>
