@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900">
+  <defs>
+    <radialGradient id="glow" cx="72%" cy="48%" r="48%">
+      <stop offset="0" stop-color="#ff365f" stop-opacity=".18"/>
+      <stop offset=".55" stop-color="#ff365f" stop-opacity=".04"/>
+      <stop offset="1" stop-color="#07080b" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="grid" width="58" height="58" patternUnits="userSpaceOnUse">
+      <path d="M58 0H0V58" fill="none" stroke="#fff" stroke-opacity=".035"/>
+    </pattern>
+  </defs>
+  <rect width="1600" height="900" fill="#07080b"/>
+  <rect width="1600" height="900" fill="url(#grid)"/>
+  <rect width="1600" height="900" fill="url(#glow)"/>
+
+  <g transform="translate(96 92)">
+    <circle cx="24" cy="24" r="23" fill="none" stroke="#ff365f"/>
+    <text x="24" y="30" fill="#ff365f" font-family="monospace" font-size="18" text-anchor="middle">0</text>
+    <text x="64" y="30" fill="#f5f4f2" font-family="Arial, sans-serif" font-size="24" font-weight="700" letter-spacing="3">ZERO</text>
+    <text x="150" y="30" fill="#555963" font-family="monospace" font-size="22">//</text>
+    <text x="188" y="30" fill="#ff365f" font-family="Arial, sans-serif" font-size="24" font-weight="700" letter-spacing="3">BREACH</text>
+  </g>
+
+  <g transform="translate(98 254)">
+    <text fill="#ff5777" font-family="monospace" font-size="18" letter-spacing="4">VERIFIABLE AI RED-TEAM ARENA</text>
+    <text y="105" fill="#f5f4f2" font-family="Arial, sans-serif" font-size="92" font-weight="900" letter-spacing="-5">BREAK THE AGENT.</text>
+    <text y="205" fill="none" stroke="#ff365f" stroke-width="2" font-family="Arial, sans-serif" font-size="92" font-weight="900" letter-spacing="-5">PROVE THE BREACH.</text>
+    <text y="280" fill="#9a9da6" font-family="Arial, sans-serif" font-size="27">
+      Attack autonomous AI vaults. Preserve every replay. Finalize every score on 0G.
+    </text>
+    <g transform="translate(0 340)">
+      <rect width="218" height="58" rx="5" fill="#ff365f"/>
+      <text x="109" y="37" fill="#fff" font-family="monospace" font-size="17" font-weight="700" text-anchor="middle">ENTER THE ARENA</text>
+    </g>
+  </g>
+
+  <g transform="translate(1245 445)">
+    <circle r="265" fill="none" stroke="#ff365f" stroke-opacity=".22" stroke-dasharray="5 10"/>
+    <circle r="190" fill="none" stroke="#fff" stroke-opacity=".1"/>
+    <circle r="105" fill="none" stroke="#ff365f" stroke-opacity=".55"/>
+    <path d="M-320 0H320M0-320V320" stroke="#ff365f" stroke-opacity=".24"/>
+    <circle cx="-240" cy="-110" r="9" fill="#ff365f"/>
+    <circle cx="210" cy="145" r="9" fill="#ff365f"/>
+    <circle cx="190" cy="0" r="9" fill="#ff365f"/>
+    <g fill="none" stroke="#f5f4f2" stroke-width="10" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M-48-18c0-46 96-46 96 0 0 25-12 38-26 48v25h-44V30c-14-10-26-23-26-48Z"/>
+      <path d="M-22 0h1M21 0h1M-12 25h24"/>
+    </g>
+  </g>
+
+  <g transform="translate(98 820)" fill="#737680" font-family="monospace" font-size="15" letter-spacing="2">
+    <text>0G COMPUTE</text>
+    <circle cx="175" cy="-5" r="4" fill="#ff365f"/>
+    <text x="210">0G STORAGE</text>
+    <circle cx="375" cy="-5" r="4" fill="#ff365f"/>
+    <text x="410">0G MAINNET</text>
+  </g>
+</svg>
