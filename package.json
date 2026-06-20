@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "description": "A verifiable multiplayer AI red-team arena powered by 0G.",
+  "license": "MIT",
   "homepage": "https://zero-breach.vercel.app",
   "repository": {
     "type": "git",
