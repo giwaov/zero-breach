@@ -124,7 +124,7 @@ main, footer { position: relative; z-index: 2; }
 }
 .signal-strip span { display: flex; align-items: center; gap: 7px; }.signal-strip i { width: 3px; height: 3px; border-radius: 50%; background: var(--red); }
 
-.vault-section, .arena-section, .protocol-section, .rank-section {
+.vault-section, .arena-section, .protocol-section, .rank-section, .replay-index-section {
   max-width: 1500px; margin: 0 auto; padding: 120px clamp(22px, 6vw, 90px);
 }
 .section-heading { display: flex; justify-content: space-between; align-items: end; gap: 50px; margin-bottom: 46px; }
@@ -249,6 +249,33 @@ main, footer { position: relative; z-index: 2; }
 .leaderboard-row:last-child { border-bottom: 0; }.leaderboard-row:hover { background: rgba(255,54,95,.045); color: white; }
 .leaderboard-row strong { color: var(--red); }
 
+.replay-index-section { padding-top: 30px; }
+.empty-replays {
+  min-height: 230px; display: flex; align-items: center; justify-content: center; flex-direction: column; text-align: center;
+  border: 1px dashed rgba(255,255,255,.15); color: #555963; background: rgba(255,255,255,.012);
+}
+.empty-replays svg { color: var(--red); margin-bottom: 16px; }
+.empty-replays strong { color: #b8bac0; font: 600 10px "DM Mono"; }
+.empty-replays span { font: 7px "DM Mono"; margin: 8px 0 20px; letter-spacing: .08em; }
+.empty-replays a { display: flex; align-items: center; gap: 7px; color: var(--red); font: 8px "DM Mono"; }
+.replay-index-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+.replay-index-card {
+  display: flex; flex-direction: column; gap: 18px; min-height: 255px; padding: 22px; border: 1px solid var(--line);
+  background: linear-gradient(145deg, rgba(255,255,255,.032), rgba(255,255,255,.008)); transition: .22s;
+}
+.replay-index-card:hover { transform: translateY(-4px); border-color: rgba(255,54,95,.35); background: rgba(255,54,95,.035); }
+.replay-index-card.defended:hover { border-color: rgba(156,255,98,.25); }
+.replay-index-top { display: flex; align-items: center; justify-content: space-between; }
+.replay-index-top span { color: var(--red); font: 8px "DM Mono"; letter-spacing: .1em; }
+.replay-index-card.defended .replay-index-top span { color: var(--green); }
+.replay-index-top strong { font: 700 19px "DM Mono"; color: #f3f4f7; }
+.replay-index-card h3 { font-size: 22px; letter-spacing: -.035em; margin: 0; }
+.replay-index-meta { display: grid; gap: 12px; margin-top: auto; }
+.replay-index-meta div { display: flex; justify-content: space-between; gap: 14px; border-top: 1px solid var(--line); padding-top: 10px; }
+.replay-index-meta span { color: #5f626b; font: 7px "DM Mono"; letter-spacing: .1em; }
+.replay-index-meta strong { color: #a8abb3; font: 8px "DM Mono"; overflow: hidden; text-overflow: ellipsis; }
+.replay-index-action { display: flex; justify-content: space-between; align-items: center; color: #ff8aa0; font: 8px "DM Mono"; letter-spacing: .08em; }
+
 footer { min-height: 110px; padding: 0 clamp(22px, 6vw, 90px); border-top: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; color: #555963; }
 footer p { font: 7px "DM Mono"; letter-spacing: .09em; }footer > div { display: flex; gap: 22px; }footer a { display: flex; align-items: center; gap: 6px; font: 8px "DM Mono"; }
 
@@ -267,13 +294,14 @@ footer p { font: 7px "DM Mono"; letter-spacing: .09em; }footer > div { display: 
   .nav { padding: 0 12px; }.nav-right { gap: 5px; }.nav-wallet { max-width: 145px; padding: 0 9px; font-size: 8px; white-space: nowrap; }.logo > span:not(.logo-zero), .logo > i, .logo > strong { display: none; }
   .hero { min-width: 0; padding: 85px 16px 70px; }.hero-copy { min-width: 0; width: 100%; }.hero h1 { max-width: 100%; font-size: clamp(40px, 13.2vw, 62px); overflow-wrap: anywhere; }.hero-copy > p { max-width: 100%; font-size: 14px; }.hero-visual { min-height: 390px; transform: scale(.72); margin: -45px; }.hero-rail { display: none; }
   .hero-actions { flex-direction: column; }.signal-strip { overflow: hidden; justify-content: flex-start; padding: 0 18px; }.signal-strip span:nth-of-type(n+3), .signal-strip i:nth-of-type(n+2) { display: none; }
-  .vault-section, .arena-section, .protocol-section, .rank-section { padding: 80px 18px; }.section-heading, .arena-heading { align-items: flex-start; flex-direction: column; }.section-heading > p { max-width: none; }.arena-target { text-align: left; }
+  .vault-section, .arena-section, .protocol-section, .rank-section, .replay-index-section { padding: 80px 18px; }.section-heading, .arena-heading { align-items: flex-start; flex-direction: column; }.section-heading > p { max-width: none; }.arena-target { text-align: left; }
   .vault-grid { grid-template-columns: 1fr; }.vault-card:last-child { grid-column: auto; }
   .console-topbar { grid-template-columns: 1fr auto; }.phase-status { display: none; }.console-grid { grid-template-columns: 1fr; }.target-dossier { border-right: 0; border-bottom: 1px solid var(--line); }.prompt-workspace textarea { min-height: 300px; }.workspace-footer { align-items: stretch; flex-direction: column; gap: 15px; }.attack-hints { flex-wrap: wrap; }.launch-button { width: 100%; }
   .battle-result { grid-template-columns: auto 1fr; }.result-score { grid-column: 1 / -1; text-align: left; }.result-meta { grid-column: 1 / -1; grid-template-columns: 1fr; gap: 12px; }
   .result-actions { flex-direction: column; }.result-actions a { justify-content: center; }
   .replay-main { padding: 70px 18px 90px; }.replay-verdict { grid-template-columns: 1fr; }.replay-grid { grid-template-columns: 1fr; }.replay-transcript { grid-template-columns: 1fr; }.replay-transcript pre { min-height: 190px; }
   .protocol-flow { display: grid; }.flow-line { width: 100%; height: 28px; }.flow-line svg { transform: rotate(90deg); }.rank-panel { grid-template-columns: 1fr; gap: 30px; }
+  .replay-index-grid { grid-template-columns: 1fr; }
   .leaderboard-head, .leaderboard-row { grid-template-columns: 52px 1fr 62px 55px; padding: 12px 10px; gap: 7px; }
   footer { padding: 30px 18px; gap: 20px; flex-direction: column; text-align: center; }
 }

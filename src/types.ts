@@ -77,3 +77,16 @@ export type LeaderboardEntry = {
   latestTxHash: string;
   latestReplayRoot?: string;
 };
+
+export type FinalizedBattle = {
+  attackCommitment: string;
+  operative: string;
+  vaultId?: string;
+  vaultName: string;
+  score: number;
+  breached: boolean;
+  replayRoot: string;
+  modelHash: string;
+  transactionHash: string;
+  blockNumber: number;
+};

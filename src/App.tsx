@@ -41,6 +41,7 @@ import type {
   AttackPhase,
   AttackResult,
   BattleReplay,
+  FinalizedBattle,
   LeaderboardEntry,
   Vault
 } from "./types";
@@ -371,6 +372,7 @@ function App() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [health, setHealth] = useState<Health | null>(null);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [recentBattles, setRecentBattles] = useState<FinalizedBattle[]>([]);
   const { address, chainId } = useAccount();
   const { signMessageAsync } = useSignMessage();
   const { switchChainAsync } = useSwitchChain();
@@ -395,8 +397,22 @@ function App() {
     }
   }
 
+  async function refreshBattles() {
+    try {
+      const response = await fetch("/api/battles");
+      if (!response.ok) return;
+      const payload = (await response.json()) as {
+        rows: FinalizedBattle[];
+      };
+      setRecentBattles(payload.rows);
+    } catch {
+      setRecentBattles([]);
+    }
+  }
+
   useEffect(() => {
     void refreshLeaderboard();
+    void refreshBattles();
   }, []);
 
   const progress = useMemo(
@@ -478,7 +494,10 @@ function App() {
       if (!response.ok) throw new Error(payload.error ?? "Attack execution failed.");
       setResult(payload);
       setPhase("complete");
-      if (payload.chainTxHash) void refreshLeaderboard();
+      if (payload.chainTxHash) {
+        void refreshLeaderboard();
+        void refreshBattles();
+      }
     } catch (attackError) {
       setPhase("idle");
       setError(
@@ -504,6 +523,7 @@ function App() {
           <a href="#arena" onClick={() => setMobileOpen(false)}>ATTACK LAB</a>
           <a href="#protocol" onClick={() => setMobileOpen(false)}>PROTOCOL</a>
           <a href="#leaderboard" onClick={() => setMobileOpen(false)}>RANKINGS</a>
+          <a href="#replays" onClick={() => setMobileOpen(false)}>REPLAYS</a>
         </div>
         <div className="nav-right">
           <div className="network-status">
@@ -829,6 +849,62 @@ function App() {
               </div>
             )}
           </div>
+        </section>
+
+        <section className="replay-index-section" id="replays">
+          <div className="section-heading">
+            <div>
+              <div className="section-kicker">04 // PUBLIC PROOF DOSSIERS</div>
+              <h2>Recent battles, <span>ready to replay.</span></h2>
+            </div>
+            <p>
+              These are live 0G Mainnet finalizations. Open any replay to inspect
+              the Storage-backed prompt, vault response, referee verdict, and
+              commitments.
+            </p>
+          </div>
+
+          {recentBattles.length === 0 ? (
+            <div className="empty-replays">
+              <FileSearch size={34} />
+              <strong>NO PUBLIC REPLAYS INDEXED YET</strong>
+              <span>RUN A BATTLE TO CREATE THE FIRST REPLAY DOSSIER</span>
+              <a href="#arena">LAUNCH ATTACK <ArrowRight size={14} /></a>
+            </div>
+          ) : (
+            <div className="replay-index-grid">
+              {recentBattles.slice(0, 6).map((battle) => (
+                <a
+                  className={`replay-index-card ${battle.breached ? "breached" : "defended"}`}
+                  href={`/replay/${battle.replayRoot}`}
+                  key={`${battle.transactionHash}-${battle.replayRoot}`}
+                >
+                  <div className="replay-index-top">
+                    <span>{battle.breached ? "BREACH" : "DEFENDED"}</span>
+                    <strong>{battle.score}/100</strong>
+                  </div>
+                  <h3>{battle.vaultName}</h3>
+                  <div className="replay-index-meta">
+                    <div>
+                      <span>OPERATIVE</span>
+                      <strong>{shortAddress(battle.operative)}</strong>
+                    </div>
+                    <div>
+                      <span>REPLAY ROOT</span>
+                      <strong>{shortHash(battle.replayRoot)}</strong>
+                    </div>
+                    <div>
+                      <span>BLOCK</span>
+                      <strong>{battle.blockNumber}</strong>
+                    </div>
+                  </div>
+                  <div className="replay-index-action">
+                    VIEW REPLAY <ArrowRight size={14} />
+                  </div>
+                </a>
+              ))}
+            </div>
+          )}
         </section>
       </main>
 
