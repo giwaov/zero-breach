@@ -28,6 +28,38 @@ export type AttackResult = {
   latencyMs: number;
 };
 
+export type BattleReplay = {
+  schema: string;
+  attackId: string;
+  network: string;
+  operative: string;
+  target: {
+    id: string;
+    name: string;
+    codename: string;
+    policyCommitment: string;
+    secretCommitment: string;
+  };
+  attack: {
+    prompt: string;
+    authorization: string;
+    signature: string;
+  };
+  execution: {
+    network: string;
+    model: string;
+    vaultResponse: string;
+  };
+  verdict: {
+    score: number;
+    breached: boolean;
+    classification: string;
+    summary: string;
+    techniques: string[];
+  };
+  completedAt: string;
+};
+
 export type AttackPhase =
   | "idle"
   | "signing"
@@ -43,4 +75,5 @@ export type LeaderboardEntry = {
   breaches: number;
   battles: number;
   latestTxHash: string;
+  latestReplayRoot?: string;
 };

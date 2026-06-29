@@ -81,6 +81,11 @@ const refereeSchema = z.object({
   techniques: z.array(z.string().min(2).max(60)).max(6)
 });
 
+const replayRootSchema = z.string().refine(
+  (value) => ethers.isHexString(value.trim(), 32),
+  "Invalid replay root"
+);
+
 export function buildAttackAuthorization(input: {
   wallet: string;
   vaultId: string;
@@ -120,6 +125,12 @@ function internalError(context: string, error: unknown) {
     context,
     errorType: error instanceof Error ? error.name : typeof error
   });
+}
+
+function resolveVaultId(vaultHash: string) {
+  return Object.keys(vaultSpecs).find(
+    (vaultId) => ethers.id(vaultId).toLowerCase() === vaultHash.toLowerCase()
+  );
 }
 
 async function runComputeDuel(vaultId: keyof typeof vaultSpecs, prompt: string) {
@@ -330,6 +341,7 @@ app.get("/api/leaderboard", async (_request, response) => {
         battles: number;
         latestTxHash: string;
         latestBlock: number;
+        latestReplayRoot?: string;
       }
     >();
 
@@ -343,7 +355,8 @@ app.get("/api/leaderboard", async (_request, response) => {
         breaches: 0,
         battles: 0,
         latestTxHash: log.transactionHash,
-        latestBlock: 0
+        latestBlock: 0,
+        latestReplayRoot: undefined
       };
       current.totalScore += Number(parsed.args.score);
       current.breaches += parsed.args.breached ? 1 : 0;
@@ -351,6 +364,7 @@ app.get("/api/leaderboard", async (_request, response) => {
       if (log.blockNumber >= current.latestBlock) {
         current.latestBlock = log.blockNumber;
         current.latestTxHash = log.transactionHash;
+        current.latestReplayRoot = parsed.args.replayRoot as string;
       }
       byOperative.set(operative, current);
     }
@@ -368,7 +382,8 @@ app.get("/api/leaderboard", async (_request, response) => {
         totalScore: entry.totalScore,
         breaches: entry.breaches,
         battles: entry.battles,
-        latestTxHash: entry.latestTxHash
+        latestTxHash: entry.latestTxHash,
+        latestReplayRoot: entry.latestReplayRoot
       }));
 
     response.json({
@@ -379,6 +394,85 @@ app.get("/api/leaderboard", async (_request, response) => {
   } catch (error) {
     internalError("leaderboard-read", error);
     response.status(502).json({ error: "Unable to read the mainnet leaderboard." });
+  }
+});
+
+app.get("/api/battles", async (_request, response) => {
+  try {
+    const provider = new ethers.JsonRpcProvider(
+      process.env.ZG_RPC_URL?.trim() || MAINNET_RPC
+    );
+    const contractAddress =
+      process.env.BREACH_ARENA_CONTRACT_ADDRESS?.trim() ||
+      DEFAULT_ARENA_CONTRACT;
+    const logs = await provider.getLogs({
+      address: contractAddress,
+      fromBlock: ARENA_DEPLOYMENT_BLOCK,
+      toBlock: "latest",
+      topics: [arenaInterface.getEvent("BattleFinalized")!.topicHash]
+    });
+
+    const rows = logs
+      .map((log) => {
+        const parsed = arenaInterface.parseLog(log);
+        if (!parsed) return undefined;
+        const vaultId = resolveVaultId(parsed.args.vaultId as string);
+        return {
+          attackCommitment: parsed.args.attackId as string,
+          operative: ethers.getAddress(parsed.args.operative as string),
+          vaultId,
+          vaultName: vaultId
+            ? vaultSpecs[vaultId as keyof typeof vaultSpecs].name
+            : "Unknown Vault",
+          score: Number(parsed.args.score),
+          breached: Boolean(parsed.args.breached),
+          replayRoot: parsed.args.replayRoot as string,
+          modelHash: parsed.args.modelHash as string,
+          transactionHash: log.transactionHash,
+          blockNumber: log.blockNumber
+        };
+      })
+      .filter((row): row is NonNullable<typeof row> => Boolean(row))
+      .sort((a, b) => b.blockNumber - a.blockNumber)
+      .slice(0, 12);
+
+    response.json({
+      contractAddress,
+      deploymentBlock: ARENA_DEPLOYMENT_BLOCK,
+      rows
+    });
+  } catch (error) {
+    internalError("battles-read", error);
+    response.status(502).json({ error: "Unable to read finalized battles." });
+  }
+});
+
+app.get("/api/replays/:rootHash", async (request, response) => {
+  const parsedRoot = replayRootSchema.safeParse(request.params.rootHash);
+  if (!parsedRoot.success) {
+    response.status(400).json({ error: "Invalid replay root." });
+    return;
+  }
+
+  try {
+    const { Indexer } = await import("@0gfoundation/0g-storage-ts-sdk");
+    const indexer = new Indexer(
+      process.env.ZG_STORAGE_INDEXER?.trim() || STORAGE_INDEXER
+    );
+    const [blob, downloadError] = await indexer.downloadToBlob(
+      parsedRoot.data.trim(),
+      { proof: false }
+    );
+    if (downloadError) throw downloadError;
+
+    const replay = JSON.parse(await blob.text());
+    response.json({
+      rootHash: parsedRoot.data.trim(),
+      replay
+    });
+  } catch (error) {
+    internalError("replay-read", error);
+    response.status(502).json({ error: "Unable to load the 0G Storage replay." });
   }
 });
 

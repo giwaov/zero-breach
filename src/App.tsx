@@ -3,6 +3,7 @@ import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { ethers } from "ethers";
 import {
   Activity,
+  ArrowLeft,
   ArrowDown,
   ArrowRight,
   BadgeCheck,
@@ -17,6 +18,7 @@ import {
   Database,
   ExternalLink,
   Eye,
+  FileSearch,
   Fingerprint,
   Flame,
   Github,
@@ -38,6 +40,7 @@ import { useAccount, useSignMessage, useSwitchChain } from "wagmi";
 import type {
   AttackPhase,
   AttackResult,
+  BattleReplay,
   LeaderboardEntry,
   Vault
 } from "./types";
@@ -62,6 +65,9 @@ const phaseCopy: Record<AttackPhase, string> = {
 
 const shortAddress = (address: string) =>
   `${address.slice(0, 6)}…${address.slice(-4)}`;
+
+const shortHash = (value: string) =>
+  `${value.slice(0, 12)}…${value.slice(-8)}`;
 
 function Logo({ compact = false }: { compact?: boolean }) {
   return (
@@ -173,7 +179,190 @@ function VaultCard({
   );
 }
 
+function ReplayPage({ rootHash }: { rootHash: string }) {
+  const [replay, setReplay] = useState<BattleReplay | null>(null);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    setError("");
+
+    void fetch(`/api/replays/${encodeURIComponent(rootHash)}`)
+      .then(async (response) => {
+        const payload = (await response.json()) as {
+          replay?: BattleReplay;
+          error?: string;
+        };
+        if (!response.ok) throw new Error(payload.error ?? "Replay unavailable.");
+        return payload.replay;
+      })
+      .then((value) => {
+        if (!active) return;
+        setReplay(value ?? null);
+      })
+      .catch((loadError) => {
+        if (!active) return;
+        setError(
+          loadError instanceof Error
+            ? loadError.message
+            : "Replay unavailable."
+        );
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [rootHash]);
+
+  return (
+    <div className="site-shell replay-shell">
+      <div className="grid-noise" />
+      <div className="red-glow glow-one" />
+      <nav className="nav">
+        <a href="/" aria-label="ZERO BREACH home">
+          <Logo />
+        </a>
+        <div className="nav-links">
+          <a href="/#vaults">VAULTS</a>
+          <a href="/#arena">ATTACK LAB</a>
+          <a href="/#leaderboard">RANKINGS</a>
+        </div>
+        <div className="nav-right">
+          <div className="network-status">
+            <i className="online" />
+            0G STORAGE REPLAY
+          </div>
+          <a className="nav-wallet connected" href="/">
+            <ArrowLeft size={14} />
+            ARENA
+          </a>
+        </div>
+      </nav>
+
+      <main className="replay-main">
+        <section className="replay-hero">
+          <div className="hero-kicker">
+            <FileSearch size={13} />
+            PUBLIC BATTLE REPLAY
+          </div>
+          <h1>
+            Every attack has
+            <br />
+            <span>receipts.</span>
+          </h1>
+          <p>
+            This page loads the battle artifact from 0G Storage using the replay
+            root finalized by the ZERO//BREACH Mainnet contract.
+          </p>
+          <div className="replay-root">
+            <span>0G STORAGE ROOT</span>
+            <strong>{rootHash}</strong>
+          </div>
+        </section>
+
+        {loading && (
+          <section className="replay-card replay-loading">
+            <span className="spinner" />
+            Loading replay from 0G Storage…
+          </section>
+        )}
+
+        {!loading && error && (
+          <section className="replay-card replay-error">
+            <ShieldAlert size={22} />
+            <div>
+              <strong>Replay could not be loaded</strong>
+              <p>{error}</p>
+            </div>
+          </section>
+        )}
+
+        {!loading && replay && (
+          <section className={`replay-card ${replay.verdict.breached ? "breached" : "defended"}`}>
+            <div className="replay-verdict">
+              <div>
+                <span className="section-kicker">VERDICT</span>
+                <h2>{replay.verdict.classification}</h2>
+                <p>{replay.verdict.summary}</p>
+              </div>
+              <div className="result-score">
+                <small>SCORE</small>
+                <strong>{Math.round(replay.verdict.score)}</strong>
+                <span>/100</span>
+              </div>
+            </div>
+
+            <div className="replay-grid">
+              <div>
+                <span>ATTACK ID</span>
+                <strong>{replay.attackId}</strong>
+              </div>
+              <div>
+                <span>OPERATIVE</span>
+                <strong>{shortAddress(replay.operative)}</strong>
+              </div>
+              <div>
+                <span>TARGET</span>
+                <strong>{replay.target.name}</strong>
+              </div>
+              <div>
+                <span>MODEL</span>
+                <strong>{replay.execution.model}</strong>
+              </div>
+              <div>
+                <span>COMPLETED</span>
+                <strong>{new Date(replay.completedAt).toLocaleString()}</strong>
+              </div>
+              <div>
+                <span>SECRET COMMITMENT</span>
+                <strong>{shortHash(replay.target.secretCommitment)}</strong>
+              </div>
+            </div>
+
+            <div className="replay-transcript">
+              <div>
+                <span>ATTACK PROMPT</span>
+                <pre>{replay.attack.prompt}</pre>
+              </div>
+              <div>
+                <span>VAULT RESPONSE</span>
+                <pre>{replay.execution.vaultResponse}</pre>
+              </div>
+            </div>
+
+            <div className="replay-techniques">
+              <span>REFEREE SIGNALS</span>
+              <div>
+                {replay.verdict.techniques.map((technique) => (
+                  <em key={technique}>{technique}</em>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+      </main>
+
+      <footer>
+        <Logo compact />
+        <p>REPLAY ROOTS ARE 0G STORAGE COMMITMENTS FINALIZED BY 0G MAINNET.</p>
+        <div>
+          <a href="/" rel="noreferrer"><ArrowLeft size={15} /> ARENA</a>
+          <a href="https://chainscan.0g.ai" target="_blank" rel="noreferrer">0G EXPLORER <ExternalLink size={13} /></a>
+        </div>
+      </footer>
+    </div>
+  );
+}
+
 function App() {
+  const replayRoute = window.location.pathname.match(/^\/replay\/(0x[a-fA-F0-9]{64})$/);
+  if (replayRoute) return <ReplayPage rootHash={replayRoute[1]} />;
+
   const [selectedVault, setSelectedVault] = useState(vaults[2]);
   const [prompt, setPrompt] = useState("");
   const [phase, setPhase] = useState<AttackPhase>("idle");
@@ -528,11 +717,36 @@ function App() {
                 <div className="result-meta">
                   <div><span>MODEL</span><strong>{result.model}</strong></div>
                   <div><span>LATENCY</span><strong>{result.latencyMs}ms</strong></div>
-                  <div><span>REPLAY ROOT</span><strong>{result.replayRoot ? `${result.replayRoot.slice(0, 12)}…` : "NOT ANCHORED"}</strong></div>
+                  <div><span>REPLAY ROOT</span><strong>{result.replayRoot ? shortHash(result.replayRoot) : "NOT ANCHORED"}</strong></div>
                 </div>
                 <div className="vault-response">
                   <span>VAULT RESPONSE</span>
                   <p>{result.vaultResponse}</p>
+                </div>
+                <div className="result-actions">
+                  {result.replayRoot && (
+                    <a href={`/replay/${result.replayRoot}`}>
+                      <FileSearch size={14} /> VIEW PUBLIC REPLAY
+                    </a>
+                  )}
+                  {result.chainTxHash && (
+                    <a
+                      href={`https://chainscan.0g.ai/tx/${result.chainTxHash}`}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      MAINNET TX <ExternalLink size={13} />
+                    </a>
+                  )}
+                  {result.storageTxHash && (
+                    <a
+                      href={`https://chainscan.0g.ai/tx/${result.storageTxHash}`}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      STORAGE TX <ExternalLink size={13} />
+                    </a>
+                  )}
                 </div>
               </div>
             )}
@@ -578,8 +792,8 @@ function App() {
               <span className="section-kicker">SEASON_00 // GENESIS</span>
               <h2>The leaderboard begins with the <span>first real breach.</span></h2>
               <p>
-                No fabricated players. No placeholder wins. The table activates
-                when the first wallet-finalized battle lands on 0G Mainnet.
+                No fabricated players. No placeholder wins. Every ranked row
+                opens the latest public replay anchored by that operative.
               </p>
             </div>
             {leaderboard.length === 0 ? (
@@ -597,9 +811,13 @@ function App() {
                 {leaderboard.slice(0, 8).map((entry) => (
                   <a
                     key={entry.operative}
-                    href={`https://chainscan.0g.ai/tx/${entry.latestTxHash}`}
-                    target="_blank"
-                    rel="noreferrer"
+                    href={
+                      entry.latestReplayRoot
+                        ? `/replay/${entry.latestReplayRoot}`
+                        : `https://chainscan.0g.ai/tx/${entry.latestTxHash}`
+                    }
+                    target={entry.latestReplayRoot ? undefined : "_blank"}
+                    rel={entry.latestReplayRoot ? undefined : "noreferrer"}
                     className="leaderboard-row"
                   >
                     <strong>#{entry.rank.toString().padStart(3, "0")}</strong>
