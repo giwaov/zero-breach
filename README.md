@@ -37,7 +37,10 @@ replay, and Mainnet receipt.
    and verdict are uploaded to 0G Storage.
 6. **Finalize the score** - `BreachArena` records the score, breach status,
    replay root, vault ID, operative, and model hash on 0G Mainnet.
-7. **Update the leaderboard** - Rankings are reconstructed exclusively from
+7. **Expose public replay pages** - Any finalized replay root can be opened as
+   `/replay/<root>` to inspect the stored prompt, vault response, verdict, and
+   commitments.
+8. **Update the leaderboard** - Rankings are reconstructed exclusively from
    real `BattleFinalized` events.
 
 ## Why 0G is essential
@@ -60,6 +63,8 @@ unfinalized result cannot appear as an official leaderboard entry.
 
 The proof battle completed the full pipeline: wallet authorization, two Compute
 inferences, Storage upload, contract settlement, and event-indexed ranking.
+Leaderboard rows now open the latest public replay for each operative, making
+the Storage evidence directly inspectable from the live interface.
 
 ## Security and integrity
 
@@ -150,6 +155,7 @@ The Group Stage release is live with:
 - Two-stage 0G Compute execution
 - 0G Storage replay anchoring
 - 0G Mainnet settlement
+- Public battle replay pages
 - Authentic event-indexed leaderboard
 - Responsive desktop and mobile interface
 
